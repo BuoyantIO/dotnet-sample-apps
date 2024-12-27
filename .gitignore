@@ -1,0 +1,8 @@
+.DS_Store
+*.log
+*.orig
+*.bak
+
+k8s-locust-load-tester/__pycache__/*
+k8s-locust-load-tester/__pycache__
+

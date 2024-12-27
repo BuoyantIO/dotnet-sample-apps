@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-9-app
+  labels:
+    app: dotnet-9-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnet-9-app
+      dot: net
+  template:
+    metadata:
+      labels:
+        app: dotnet-9-app
+        dot: net
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: dotnet-app
+        image: dotnet-9-app:v1
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:5000
+        ports:
+        - containerPort: 5000  # Change this to the port your app listens on
+## Need netshoot to have access to tcpdump
+      - name: netshoot
+        image: nicolaka/netshoot:latest
+        command: ["/bin/sh", "-c", "while true; do ping localhost > /dev/null 2>&1; done"]
+        ports:
+        - containerPort: 80
+#      - name: curl
+#        image: curlimages/curl:latest
+#        env:
+#        - name: TARGET_ENDPOINT
+#          value: "http://127.0.0.1:5000/test" # Replace with your default endpoint
+#        - name: SLEEP_INTERVAL
+#          value: "4" # Replace with your default sleep interval in seconds
+#        command: ["/bin/sh", "-c"]
+#        args:
+#        - |
+#          while true; do
+#            echo "Curling $TARGET_ENDPOINT";
+#            response=$(curl -X 'GET' -H 'accept: application/json' $TARGET_ENDPOINT);
+#            echo "Response body: $response";
+#            echo "Sleeping for $SLEEP_INTERVAL seconds...";
+#            sleep $SLEEP_INTERVAL;
+#          done
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-9-app
+  labels:
+    app: dotnet-8-app
+    dot: net
+spec:
+  type: ClusterIP
+  selector:
+    app: dotnet-9-app
+  ports:
+  - port: 80
+    targetPort: 5000
+    name: dotnet

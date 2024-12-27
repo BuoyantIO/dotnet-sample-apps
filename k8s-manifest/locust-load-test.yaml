@@ -1,0 +1,172 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-8-locust-load-test
+  labels:
+    name: dotnet-8-locust-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: dotnet-8-locust-load-test
+  template:
+    metadata:
+      labels:
+        name: dotnet-8-locust-load-test
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: locust-load-test
+        image: locust-load-test:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do locust --host $HOSTNAME -f /config/locustfile.py --spawn-rate $HATCH_RATE --run-time $RUN_TIME --users $USERS --headless; sleep 600; done"]
+        env:
+        - name: MY_ENV_VAR
+          value: "some_value"
+        - name: HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-8-locustfile-cm
+              key: hostname
+        - name: HATCH_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-8-locustfile-cm
+              key: hatchrate
+        - name: RUN_TIME
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-8-locustfile-cm
+              key: run-time
+        - name: USERS
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-8-locustfile-cm
+              key: users
+        volumeMounts:
+        - name: dotnet-8-locustfile-cm
+          mountPath: /config/locustfile.py
+      volumes:
+      - name: dotnet-8-locustfile-cm
+        configMap:
+          name: dotnet-8-locustfile-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dotnet-8-locustfile-cm
+data:
+  hatchrate: "5"
+  run-time: "5m"
+  users: "50"
+  hostname: "http://dotnet-8-app"
+  locustfile.py: |
+    import base64
+    
+    import requests
+    requests.packages.urllib3.disable_warnings() 
+    
+    from locust import HttpUser, TaskSet, task
+    from random import randint, choice
+    base64.encodestring = base64.encodebytes
+    
+    class WebTasks(TaskSet):
+    
+        @task
+        def load(self):
+            self.client.verify = False
+    
+            self.client.get("/test")
+            self.client.get("/health")
+    
+    class Web(HttpUser):
+        tasks = [WebTasks]
+        min_wait = 0
+        max_wait = 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-9-locust-load-test
+  labels:
+    name: dotnet-9-locust-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: dotnet-9-locust-load-test
+  template:
+    metadata:
+      labels:
+        name: dotnet-9-locust-load-test
+    spec:
+      containers:
+      - name: locust-load-test
+        image: locust-load-test:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do locust --host $HOSTNAME -f /config/locustfile.py --spawn-rate $HATCH_RATE --run-time $RUN_TIME --users $USERS --headless; sleep 600; done"]
+        env:
+        - name: MY_ENV_VAR
+          value: "some_value"
+        - name: HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-9-locustfile-cm
+              key: hostname
+        - name: HATCH_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-9-locustfile-cm
+              key: hatchrate
+        - name: RUN_TIME
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-9-locustfile-cm
+              key: run-time
+        - name: USERS
+          valueFrom:
+            configMapKeyRef:
+              name: dotnet-9-locustfile-cm
+              key: users
+        volumeMounts:
+        - name: dotnet-9-locustfile-cm
+          mountPath: /config/locustfile.py
+      volumes:
+      - name: dotnet-9-locustfile-cm
+        configMap:
+          name: dotnet-9-locustfile-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dotnet-9-locustfile-cm
+data:
+  hatchrate: "5"
+  run-time: "5m"
+  users: "50"
+  hostname: "http://dotnet-9-app"
+  locustfile.py: |
+    import base64
+    
+    import requests
+    requests.packages.urllib3.disable_warnings() 
+    
+    from locust import HttpUser, TaskSet, task
+    from random import randint, choice
+    base64.encodestring = base64.encodebytes
+    
+    class WebTasks(TaskSet):
+    
+        @task
+        def load(self):
+            self.client.verify = False
+    
+            self.client.get("/test")
+            self.client.get("/health")
+    
+    class Web(HttpUser):
+        tasks = [WebTasks]
+        min_wait = 0
+        max_wait = 0
